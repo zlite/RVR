@@ -25,24 +25,23 @@ rvr = SpheroRvrAsync(
 )
 
 async def main():
-    """
-    Runs the main control loop for this demo.  Uses the KeyboardHelper class to read a keypress from the terminal.
-
-    W - Go forward.  Press multiple times to increase speed.
-    A - Decrease heading by -10 degrees with each key press.
-    S - Go reverse. Press multiple times to increase speed.
-    D - Increase heading by +10 degrees with each key press.
-    Spacebar - Reset speed and flags to 0. RVR will coast to a stop
-
-    """
     global current_key_code
     global speed
     global heading
     global flags
 
+    speed = 64
+    heading = 10
+    flags = 1
+
     await rvr.wake()
 
     await rvr.reset_yaw()
+    # issue the driving command
+    await rvr.drive_with_heading(speed, heading, flags)
+
+    # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
+    await asyncio.sleep(0.1)
 
 
 # Implement two "processing" functions, each of which
