@@ -16,6 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 
 from sphero_sdk import SerialAsyncDal
 from sphero_sdk import SpheroRvrAsync
+from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
 loop = asyncio.get_event_loop()
 rvr = SpheroRvrAsync(
@@ -29,19 +30,23 @@ async def main():
     global speed
     global heading
     global flags
-
+    global reverse
     speed = 64
     heading = 10
-    flags = 1
-
+    reverse = False
     await rvr.wake()
-
     await rvr.reset_yaw()
+    print("rvr ready!")
     # issue the driving command
-    await rvr.drive_with_heading(speed, heading, flags)
-
-    # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
-    await asyncio.sleep(0.1)
+    while True:
+        flags = 0
+        if reverse:
+            flags = DriveFlagsBitmask.drive_reverse
+        else:
+            flags=DriveFlagsBitmask.none.value
+        await rvr.drive_with_heading(speed, heading, flags)
+        # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
+        await asyncio.sleep(0.1)
 
 
 # Implement two "processing" functions, each of which
@@ -58,13 +63,7 @@ def slower_processing(frame):
         time.sleep(1)
     print(n)
 
-def run_loop():
-    global loop
-    loop.run_until_complete(
-        asyncio.gather(
-            main()
-        )
-    )
+
 try:
     # Create a pipeline
     pipeline = rs.pipeline()
@@ -73,7 +72,10 @@ try:
     #  different resolutions of color and depth streams
     config = rs.config()
     config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-    run_loop()
+    print("Starting...")
+    loop.run_until_complete(
+        main()
+        )
 except KeyboardInterrupt:
         print("Keyboard Interrupt...")
         key_helper.end_get_key_continuous()
