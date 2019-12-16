@@ -31,14 +31,19 @@ async def main():
     global heading
     global flags
     global reverse
-    speed = 64
-    heading = 10
+    speed = 64 # Valid speed values are 0-255
+    heading = 10 # Valid heading values are 0-359
     reverse = False
     await rvr.wake()
     await rvr.reset_yaw()
     print("rvr ready!")
     # issue the driving command
     while True:
+        frames = pipeline.wait_for_frames()
+        depth = frames.get_depth_frame()
+        if depth:
+            dist = depth.get_distance(100, 100)
+            print(dist)
         flags = 0
         if reverse:
             flags = DriveFlagsBitmask.drive_reverse
@@ -67,6 +72,7 @@ def slower_processing(frame):
 try:
     # Create a pipeline
     pipeline = rs.pipeline()
+    pipeline.start()
 
     # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
