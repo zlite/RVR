@@ -57,11 +57,6 @@ async def main():
             for x in range(ROIx1, ROIx2):
                 dist = depth.get_distance(x, y)
                 if depth1 < dist and dist < depth2:
-                    scan[x-ROIx1] = True
-                else:
-                    scan[x-ROIx1] = False
-            for x in range(ROIx1, ROIx2):
-                if scan[x-ROIx1]:
                     print("x", end = '')
                 else:
                     print(" ", end = '')
