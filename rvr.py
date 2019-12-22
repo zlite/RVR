@@ -24,7 +24,7 @@ ROIy1 = 0
 ROIy2 = 10
 depth1 = 0
 depth2 = 1
-
+batch = 10
 
 loop = asyncio.get_event_loop()
 rvr = SpheroRvrAsync(
@@ -39,6 +39,7 @@ async def main():
     global heading
     global flags
     global reverse
+
     speed = 64 # Valid speed values are 0-255
     heading = 10 # Valid heading values are 0-359
     reverse = False
@@ -47,20 +48,45 @@ async def main():
     print("rvr ready!")
     # issue the driving command
     scan = []
-    for x in range(ROIx1,ROIx2):
-        scan.append(False)
+    width = ROIx2 - ROIx1
+    for x in range(width):
+        scan.append(0)
     while True:
         frames = pipeline.wait_for_frames()
         depth = frames.get_depth_frame()
         if not depth: continue  # just do the loop again until depth returns true
+        max_depth = 0
+        dist = 0
         for y in range(ROIy1,ROIy2):
-            for x in range(ROIx1, ROIx2):
-                dist = depth.get_distance(x, y)
-                if depth1 < dist and dist < depth2:
-                    print("x", end = '')
-                else:
-                    print(" ", end = '')
-            print("\n")
+            # for x in range(ROIx1, ROIx2):
+            #     dist = depth.get_distance(x, y)
+            #     if depth1 < dist and dist < depth2:
+            #         print("x", end = '')
+            #     else:
+            #         print(" ", end = '')
+            # print("\n")
+            for x in range(width):
+                scan[x] = depth.get_distance(x, y)
+            average = 0
+            count = 0
+            zonecount = 0
+            zone = []
+            for x in range(len(scan)):
+                average = average + scan[x]
+                count = count + 1
+                if count == batch:
+                    average = average/batch
+                    zone.append(average)
+                    zonecount = zonecount + 1
+                    count = 0
+                    average = 0
+            # zonecount = int(len(scan)/batch)
+            # # for x in range(zonecount):
+            # #     print(zone[x])
+            print("Longest range zone", zone.index(max(zone)))
+        #         if depth.get_distance(x, y) > dist:
+        #             max_depth = x
+        # print(max_depth)
         # flags = 0
         # if reverse:
         #     flags = DriveFlagsBitmask.drive_reverse
