@@ -18,10 +18,10 @@ from sphero_sdk import SerialAsyncDal
 from sphero_sdk import SpheroRvrAsync
 from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
-ROIx1 = 200
-ROIx2 = 400
-ROIy1 = 0
-ROIy2 = 10
+ROIx1 = 0
+ROIx2 = 640
+ROIy1 = 240
+ROIy2 = 300
 depth1 = 0
 depth2 = 1
 batch = 10
@@ -58,32 +58,36 @@ async def main():
         max_depth = 0
         dist = 0
         for y in range(ROIy1,ROIy2):
-            # for x in range(ROIx1, ROIx2):
-            #     dist = depth.get_distance(x, y)
-            #     if depth1 < dist and dist < depth2:
-            #         print("x", end = '')
-            #     else:
-            #         print(" ", end = '')
-            # print("\n")
-            for x in range(width):
-                scan[x] = depth.get_distance(x, y)
-            average = 0
-            count = 0
-            zonecount = 0
-            zone = []
-            for x in range(len(scan)):
-                average = average + scan[x]
-                count = count + 1
-                if count == batch:
-                    average = average/batch
-                    zone.append(average)
-                    zonecount = zonecount + 1
-                    count = 0
-                    average = 0
+            for x in range(ROIx1, ROIx2,3):
+                dist = depth.get_distance(x, y)
+                if depth1 < dist and dist < depth2:
+                    print("x", end = '')
+                else:
+                    print(" ", end = '')
+            print("\n")
+#        time.sleep(0.1)
+            # for x in range(width):
+            #     scan[x] = round(depth.get_distance(x, y),2)
+            # average = 0
+            # count = 0
+            # zonecount = 0
+            # zone = []
+            # for x in range(len(scan)):
+            #     average = average + scan[x]
+            #     count = count + 1
+            #     if count == batch:
+            #         average = round(average/batch,2)
+            #         zone.append(average)
+            #         zonecount = zonecount + 1
+            #         count = 0
+            #         average = 0
             # zonecount = int(len(scan)/batch)
             # # for x in range(zonecount):
             # #     print(zone[x])
-            print("Longest range zone", zone.index(max(zone)))
+#            print("Scan: ", scan)
+#            print ("Zones: ", zone)
+#            print("Longest range zone", zone.index(max(zone)))
+#            time.sleep(1)
         #         if depth.get_distance(x, y) > dist:
         #             max_depth = x
         # print(max_depth)
@@ -112,7 +116,6 @@ try:
         )
 except KeyboardInterrupt:
         print("Keyboard Interrupt...")
-        key_helper.end_get_key_continuous()
 # finally:
 #         print("Press any key to exit.")
 #         exit(1)
