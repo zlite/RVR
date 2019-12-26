@@ -47,24 +47,28 @@ async def main():
     await rvr.reset_yaw()
     print("rvr ready!")
     # issue the driving command
-    scan = []
-    width = ROIx2 - ROIx1
-    for x in range(width):
-        scan.append(0)
+    scan = [[],[]]
+    yrange = ROIy2-ROIy1
+    xrange = ROIx2-ROIx1
+    scan = [[0] * (xrange) for i in range((yrange))] # set up the array with all zeros
     while True:
         frames = pipeline.wait_for_frames()
         depth = frames.get_depth_frame()
         if not depth: continue  # just do the loop again until depth returns true
         max_depth = 0
         dist = 0
-        for y in range(ROIy1,ROIy2):
-            for x in range(ROIx1, ROIx2,3):
-                dist = depth.get_distance(x, y)
-                if depth1 < dist and dist < depth2:
-                    print("x", end = '')
-                else:
-                    print(" ", end = '')
-            print("\n")
+        for y in range(yrange):
+            for x in range(xrange):
+                scan[y][x] = depth.get_distance(x, y)
+
+        # for y in range(y):
+        #     for x in range(x,3):
+        #         dist = depth.get_distance(x, y)
+        #         if depth1 < dist and dist < depth2:
+        #             print("x", end = '')
+        #         else:
+        #             print(" ", end = '')
+        #     print("\n")
 #        time.sleep(0.1)
             # for x in range(width):
             #     scan[x] = round(depth.get_distance(x, y),2)
