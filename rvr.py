@@ -22,9 +22,11 @@ ROIx1 = 0
 ROIx2 = 640
 ROIy1 = 240
 ROIy2 = 300
-depth1 = 0
-depth2 = 1
-binsize = 30
+yrange = ROIy2-ROIy1
+xrange = ROIx2-ROIx1
+xincrement = 5
+binsize = 10
+bins = round(xrange/(binsize * xincrement))
 
 loop = asyncio.get_event_loop()
 rvr = SpheroRvrAsync(
@@ -48,13 +50,10 @@ async def main():
     print("rvr ready!")
     # issue the driving command
     scan = [[],[]]
-    yrange = ROIy2-ROIy1
-    xrange = ROIx2-ROIx1
     scan = [[0] * (xrange) for i in range((yrange))] # set up the array with all zeros
     ystack = []
     for i in range(xrange): # set up an empty list of length xrange
         ystack.append(0)
-    bins = int(xrange/binsize) # how many bins there are across our x range
     xbins = []
     xbinsold = []
     for i in range(bins): # set up an empty list of bin values for current and old values
@@ -64,29 +63,33 @@ async def main():
         frames = pipeline.wait_for_frames()
         depth = frames.get_depth_frame()
         if not depth: continue  # just do the loop again until depth returns true
-        max_depth = 0
-        dist = 0
+        # start = time.time()
         for y in range(yrange):
-            for x in range(xrange):
+            for x in range(0,xrange,xincrement):
                 scan[y][x] = depth.get_distance(x, y)
-
+        # finish = round(time.time() - start,2)
+        # print("Gathering data: ", finish)
+        # start = time.time()
         # Now start averaging and binning:
         # First, average vertically
-        for x in range(xrange):
+        for x in range(0,xrange,xincrement):
             ystack[x] = 0
             for y in range(yrange):
                 ystack[x] = ystack[x] + scan[y][x]
             ystack[x] = round(ystack[x]/yrange,2)  # take average across the y's
 #        print("Ystack", ystack)
-
+        # finish = round(time.time() - start,2)
+        # print("Vertical averaging: ", finish)
+        # start = time.time()
         # then, sum and average across each horizontal bin
         for i in range(bins):
-            start = i * binsize
             xbins[i] = 0
             for j in range(binsize):
-                xbins[i] = xbins[i] + ystack[i*binsize + j]  # sum the bin
+                xbins[i] = xbins[i] + ystack[i*binsize + j*xincrement]  # sum the bin
 #                print(i*binsize+j)
             xbins[i] = round(xbins[i]/binsize,2) # average the bin
+        # finish = round(time.time() - start,2)
+        # print("Binning: ", finish)
         print("Xbins", xbins)
         xbinsold = xbins # copy latest bins into oldbins for bayesian smoothing
 
