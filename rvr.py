@@ -25,7 +25,7 @@ xrange = ROIx2-ROIx1
 xincrement = 5
 binsize = 10
 lastgood = 1 # this is the variable we use to pass over 0 depth pixels
-bins = round(xrange/(binsize * xincrement)) # should be 15 bins in this case
+bins = round(xrange/(binsize * xincrement)) # should be 13 bins in this case
 epoch = 0
 scan = [[],[]]
 xstack = []
@@ -98,12 +98,13 @@ async def main():
 
 
         # then, sum and average across each horizontal bin
-        for i in range(bins):
+        for i in range(bins-1):
             xbins[i] = 0
             for j in range(binsize):
-                xbins[i] = xbins[i] + xstack[i*binsize + j*xincrement]  # sum the bin
+                xbins[i] = xbins[i] + xstack[i*binsize*xincrement + j*xincrement]  # sum the bin
             xbins[i] = round(xbins[i]/binsize,2) # average the bin
         print("Xbins unsmoothed", xbins)
+
         if (epoch != 0):
             for i in range(bins):
                 xbins[i] = round((xbins[i]+xbinsold[i])/2,2)   # bayesian smooothing
