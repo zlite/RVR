@@ -16,8 +16,8 @@ from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
 
 # we set the depth resolution on the Realsense 435 device to 640x480, with 0,0 in the top left corner
-ROIx1 = 80
-ROIx2 = 400
+ROIx1 = 0
+ROIx2 = 640
 ROIy1 = 240
 ROIy2 = 270
 yrange = ROIy2-ROIy1
@@ -25,7 +25,7 @@ xrange = ROIx2-ROIx1
 xincrement = 5
 binsize = 10
 lastgood = 1 # this is the variable we use to pass over 0 depth pixels
-bins = round(xrange/(binsize * xincrement)) # should be 13 bins in this case
+bins = round(xrange/(binsize * xincrement)) # should be 15 bins in this case
 epoch = 0
 scan = [[],[]]
 xstack = []
@@ -82,7 +82,7 @@ async def main():
             for y in range(yrange):  # sum up all the y's in each x stack
                 xstack[x] = xstack[x] + scan[y][x]
             xstack[x] = round(xstack[x]/yrange,2)  # take average across the y's
-            if 0 <= xstack[x] <= 1:
+            if 0 <= xstack[x] <= 1:  # something is close
                 print("X",end = '')
             elif 1.001 <= xstack[x] <= 2:
                 print("x",end = '')
