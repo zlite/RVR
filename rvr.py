@@ -14,14 +14,17 @@ from sphero_sdk import SerialAsyncDal
 from sphero_sdk import SpheroRvrAsync
 from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
-ROIx1 = 0
-ROIx2 = 640
+
+# we set the depth resolution on the Realsense 435 device to 640x480, with 0,0 in the top left corner
+ROIx1 = 80
+ROIx2 = 400
 ROIy1 = 240
-ROIy2 = 300
+ROIy2 = 270
 yrange = ROIy2-ROIy1
 xrange = ROIx2-ROIx1
 xincrement = 5
 binsize = 10
+lastgood = 1 # this is the variable we use to pass over 0 depth pixels
 bins = round(xrange/(binsize * xincrement)) # should be 13 bins in this case
 epoch = 0
 scan = [[],[]]
@@ -53,7 +56,7 @@ def setup():
 
 async def main():
     global current_key_code, speed, heading, flags, reverse
-    global epoch, xbinsold, ystack, xbins, xbinsold, scan
+    global epoch, xbinsold, ystack, xbins, xbinsold, scan, lastgood
 
     await rvr.wake()
     await rvr.reset_yaw()
@@ -66,7 +69,11 @@ async def main():
         # Get the data
         for y in range(yrange):
             for x in range(0,xrange,xincrement):
-                scan[y][x] = depth.get_distance(x, y)
+                scan[y][x] = depth.get_distance(x+ROIx1, y+ROIy1)
+                if scan[y][x] == 0:   # if we get zero depth noise, just replace it with the last known good depth reading
+                    scan[y][x] = lastgood
+                else:
+                    lastgood = scan[y][x]  # good data
 
         # Start averaging and binning:
         # First, average vertically
@@ -75,6 +82,20 @@ async def main():
             for y in range(yrange):  # sum up all the y's in each x stack
                 xstack[x] = xstack[x] + scan[y][x]
             xstack[x] = round(xstack[x]/yrange,2)  # take average across the y's
+            if 0 <= xstack[x] <= 1:
+                print("X",end = '')
+            elif 1.001 <= xstack[x] <= 2:
+                print("x",end = '')
+            elif 2.001 <= xstack[x] <= 3:
+                print("-",end = '')
+            elif 3.001 <= xstack[x] <= 4:
+                print(".",end = '')
+            elif xstack[x] > 4:
+                print(" ",end = '')
+            else:
+                print("Something went wrong with my printing")
+        print("\n") # start a new line
+
 
         # then, sum and average across each horizontal bin
         for i in range(bins):
@@ -87,6 +108,7 @@ async def main():
             for i in range(bins):
                 xbins[i] = round((xbins[i]+xbinsold[i])/2,2)   # bayesian smooothing
             print("Xbins smoothed", xbins)
+            print("Longest range bin:", xbins.index(max(xbins)))
         xbinsold = list(xbins) # copy latest bins into oldbins for bayesian smoothing
         if epoch == 0:
             epoch = 1
