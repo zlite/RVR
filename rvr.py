@@ -32,7 +32,7 @@ xstack = []
 xbins = []
 xbinsold = []
 speed = 64 # Valid speed values are 0-255
-heading = 10 # Valid heading values are 0-359
+heading = 0 # Valid heading values are 0-359
 reverse = False
 
 
@@ -107,22 +107,37 @@ async def main():
 
         if (epoch != 0):
             for i in range(bins):
-                xbins[i] = round((xbins[i]+xbinsold[i])/2,2)   # bayesian smooothing
+                xbins[i] = round((xbins[i]+xbinsold[i])/2,2)   # Bayesian smooothing
             print("Xbins smoothed", xbins)
             print("Longest range bin:", xbins.index(max(xbins)))
         xbinsold = list(xbins) # copy latest bins into oldbins for bayesian smoothing
         if epoch == 0:
             epoch = 1
 
+        # this is the driving part
 
-        # flags = 0
-        # if reverse:
-        #     flags = DriveFlagsBitmask.drive_reverse
-        # else:
-        #     flags=DriveFlagsBitmask.none.value
-        # await rvr.drive_with_heading(speed, heading, flags)
-        # # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
-        # await asyncio.sleep(0.1)
+        heading = heading + (xbins.index(max(xbins)) - (bins/2)) * 10  # if higher than 6, steer to the right in ten degree increments; if lower, drive left
+
+        # check the speed value, and wrap as necessary.
+        if speed > 255:
+            speed = 255
+        elif speed < -255:
+            speed = -255
+
+        # check the heading value, and wrap as necessary.
+        if heading > 359:
+            heading = heading - 359
+        elif heading < 0:
+            heading = 359 + heading
+
+        flags = 0
+        if reverse:
+            flags = DriveFlagsBitmask.drive_reverse
+        else:
+            flags=DriveFlagsBitmask.none.value
+        await rvr.drive_with_heading(speed, heading, flags)
+        # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
+        await asyncio.sleep(0.1)
 
 setup()
 
