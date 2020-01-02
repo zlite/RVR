@@ -31,7 +31,7 @@ scan = [[],[]]
 xstack = []
 xbins = []
 xbinsold = []
-speed = 64 # Valid speed values are 0-255
+speed = 50 # Valid speed values are 0-255
 heading = 0 # Valid heading values are 0-359
 reverse = False
 
@@ -103,7 +103,6 @@ async def main():
             for j in range(binsize):
                 xbins[i] = xbins[i] + xstack[i*binsize*xincrement + j*xincrement]  # sum the bin
             xbins[i] = round(xbins[i]/binsize,2) # average the bin
-        print("Xbins unsmoothed", xbins)
 
         if (epoch != 0):
             for i in range(bins):
@@ -116,7 +115,7 @@ async def main():
 
         # this is the driving part
 
-        heading = heading + (xbins.index(max(xbins)) - (bins/2)) * 10  # if higher than 6, steer to the right in ten degree increments; if lower, drive left
+        heading = heading + ((xbins.index(max(xbins)) - (int(bins/2)))*3)  # if higher than 6, steer to the right in 5 degree increments; if lower, drive left
 
         # check the speed value, and wrap as necessary.
         if speed > 255:
@@ -137,7 +136,6 @@ async def main():
             flags=DriveFlagsBitmask.none.value
         await rvr.drive_with_heading(speed, heading, flags)
         # sleep the infinite loop for a 10th of a second to avoid flooding the serial port.
-        await asyncio.sleep(0.1)
 
 setup()
 
