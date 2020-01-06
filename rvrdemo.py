@@ -49,7 +49,7 @@ def main():
     for i in range(bins):
         xbins[i] = 0
         for j in range(binsize):
-            xbins[i] = xbins[i] + xstack[i*binsize + j*xincrement]  # sum the bin
+            xbins[i] = xbins[i] + xstack[i*binsize*xincrement + j*xincrement]  # sum the bin
         xbins[i] = round(xbins[i]/binsize,2) # average the bin
     print("Xbins unsmoothed", xbins)  
     if (epoch != 0):
