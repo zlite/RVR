@@ -36,7 +36,7 @@ xbinsold = []
 speed = 50 # Valid speed values are 0-255
 heading = 0 # Valid heading values are 0-359
 reverse = False
-gain = 2.5
+gain = 2.2
 
 
 loop = asyncio.get_event_loop()
@@ -46,12 +46,18 @@ rvr = SpheroRvrAsync(
     )
 )
 
+async def run_raw_motors(left_mode, left_speed, right_mode, right_speed):
+    await rvr.raw_motors(left_mode, left_speed, right_mode, right_speed)
+
+async def stop_raw_motors():
+    await rvr.raw_motors(0, 0, 0, 0)
+
 def setup():
     global scan, xstack, xbins, xbinsold
     print("rvr ready!")
 
     scan = [[0 for i in range(xres)] for j in range(yres)] # dimension the array
-
+    flags=DriveFlagsBitmask.none.value
     for i in range(ROIx1,ROIx2): # set up an empty list of length xrange
         xstack.append(0)
     for i in range(bins): # set up an empty list of bin values for current and old values
@@ -106,8 +112,9 @@ async def main():
                 print("Something went wrong with my printing. X =", xstack[x])
         print("\n") # start a new line
 
-        # then, sum and average across each horizontal bin
 
+#       This next section is just if you want to use dynamic ROIs (looking further ahead if no obstacles are close)
+#
         average = 0
         total = 0
         for i in range(bins-1):
@@ -117,30 +124,37 @@ async def main():
             xbins[i] = round(xbins[i]/binsize,2) # average the bin
             average = average + xbins[i]   # sum up all the x stacks
             total = total + 1
-        average = round(average/total,2)    # take the average of all the xstacks
-#        print("Average distance: ", average)
+#         average = round(average/total,2)    # take the average of all the xstacks
+# #        print("Average distance: ", average)
 
-        # expand the ROI
-        if 0.0 <= average <= 0.25:
-            ROIy1 = 220
-            ROIy2 = 280
-            yrange = ROIy2-ROIy1
-        elif 0.26 <= average <= 0.50:
-            ROIy1 = 220
-            ROIy2 = 280
-            yrange = ROIy2-ROIy1
-        elif 0.51 <= average <= 0.75:
-            ROIy1 = 220
-            ROIy2 = 280
-            yrange = ROIy2-ROIy1
-        elif 0.76 <= average <= 1.00:
-            ROIy1 = 220
-            ROIy2 = 280
-            yrange = ROIy2-ROIy1
-        else:
-            ROIy1 = 220
-            ROIy2 = 280
-            yrange = ROIy2-ROIy1
+#       This next section is just if you want to use dynamic ROIs (looking further ahead if no obstacles are close)
+#
+        # # expand the ROI as necessary
+        # if 0.0 <= average <= 0.25:
+        #     ROIy1 = 220
+        #     ROIy2 = 280
+        #     yrange = ROIy2-ROIy1
+        # elif 0.26 <= average <= 0.50:
+        #     ROIy1 = 220
+        #     ROIy2 = 280
+        #     yrange = ROIy2-ROIy1
+        # elif 0.51 <= average <= 0.75:
+        #     ROIy1 = 220
+        #     ROIy2 = 280
+        #     yrange = ROIy2-ROIy1
+        # elif 0.76 <= average <= 1.00:
+        #     ROIy1 = 220
+        #     ROIy2 = 280
+        #     yrange = ROIy2-ROIy1
+        # else:
+        #     ROIy1 = 220
+        #     ROIy2 = 280
+        #     yrange = ROIy2-ROIy1
+
+
+        # Now sum and average across each horizontal bin
+
+
         if (epoch != 0):
             for i in range(bins):
                 xbins[i] = round((xbins[i]+xbinsold[i])/2,2)   # Bayesian smooothing
@@ -150,28 +164,40 @@ async def main():
         if epoch == 0:
             epoch = 1
 
-        # this is the driving part
-
-        heading = heading + int(((xbins.index(max(xbins)) - (int(bins/2)))*gain))  # if higher than 6, steer to the right in 5 degree increments; if lower, drive left
-
-        # check the speed value, and wrap as necessary.
-        if speed > 255:
-            speed = 255
-        elif speed < -255:
-            speed = -255
-
-        # check the heading value, and wrap as necessary.
-        if heading > 359:
-            heading = heading - 359
-        elif heading < 0:
-            heading = 359 + heading
-
-        flags = 0
-        if reverse:
-            flags = DriveFlagsBitmask.drive_reverse
+        # make sure we're not stuck in a corner
+        if (xbins[xbins.index(max(xbins))] < 0.75) and (xbins[xbins.index(max(xbins))] != 0):  # yikes, walls all around us!
+            print("Longest range:", xbins[xbins.index(max(xbins))])
+            # turn 45 degrees in the last direction you were going
+            if heading > 180:
+                heading = heading + 15
+                await rvr.drive_with_heading(20, heading, flags)
+            else:
+                heading = heading + 15
+                await rvr.drive_with_heading(20, heading, flags)
+            await asyncio.sleep(0.1)
+            print("let's try again..")
         else:
-            flags=DriveFlagsBitmask.none.value
-        await rvr.drive_with_heading(speed, heading, flags)
+            # this is the driving part
+            heading = heading + int(((xbins.index(max(xbins)) - (int(bins/2)+1))*gain))  # if higher than 6, steer to the right in 5 degree increments; if lower, drive left
+
+            # check the speed value, and wrap as necessary.
+            if speed > 255:
+                speed = 255
+            elif speed < -255:
+                speed = -255
+
+            # check the heading value, and wrap as necessary.
+            if heading > 359:
+                heading = heading - 359
+            elif heading < 0:
+                heading = 359 + heading
+
+            flags = 0
+            if reverse:
+                flags = DriveFlagsBitmask.drive_reverse
+            else:
+                flags=DriveFlagsBitmask.none.value
+            await rvr.drive_with_heading(speed, heading, flags)
 
 
 setup()
@@ -191,6 +217,3 @@ try:
         )
 except KeyboardInterrupt:
         print("Keyboard Interrupt...")
-# finally:
-#         print("Press any key to exit.")
-#         exit(1)
