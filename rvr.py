@@ -79,8 +79,6 @@ async def main():
         depth = frames.get_depth_frame()
         if not depth: continue  # just do the loop again until depth returns true
 
-        yrange = ROIy2-ROIy1
-
         # Get the data
         for y in range(ROIy1,ROIy2):
             for x in range(ROIx1,ROIx2,xincrement):
@@ -167,12 +165,12 @@ async def main():
         # make sure we're not stuck in a corner
         if (xbins[xbins.index(max(xbins))] < 0.75) and (xbins[xbins.index(max(xbins))] != 0):  # yikes, walls all around us!
             print("Longest range:", xbins[xbins.index(max(xbins))])
-            # turn 45 degrees in the last direction you were going
+            # turn 15 degrees in the last direction you were going
             if heading > 180:
                 heading = heading + 15
                 await rvr.drive_with_heading(20, heading, flags)
             else:
-                heading = heading + 15
+                heading = heading - 15
                 await rvr.drive_with_heading(20, heading, flags)
             await asyncio.sleep(0.1)
             print("let's try again..")
