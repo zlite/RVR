@@ -14,14 +14,13 @@ from sphero_sdk import SerialAsyncDal
 from sphero_sdk import SpheroRvrAsync
 from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
-
-# we set the depth resolution on the Realsense 435 device to 640x480, with 0,0 in the top left corner
+# set the Realsense resolution to 640 x 480
+yres = 480
+xres = 640
 ROIx1 = 0
 ROIx2 = 640
 ROIy1 = 220
 ROIy2 = 280
-yres = 480
-xres = 640
 yrange = ROIy2-ROIy1
 xrange = ROIx2-ROIx1
 xincrement = 5
@@ -111,8 +110,6 @@ async def main():
         print("\n") # start a new line
 
 
-#       This next section is just if you want to use dynamic ROIs (looking further ahead if no obstacles are close)
-#
         average = 0
         total = 0
         for i in range(bins-1):
