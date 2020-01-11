@@ -82,10 +82,10 @@ async def main():
         for y in range(ROIy1,ROIy2):
             for x in range(ROIx1,ROIx2,xincrement):
                 scan[y][x] = depth.get_distance(x, y)
-                if scan[y][x] == 0:   # if we get zero depth noise, just replace it with the last known good depth reading
+                if scan[y][x] == 0:   # zero means bad data (too close/too far), if we get zero depth noise, just replace it with the last known good depth reading or a set number
                     scan[y][x] = lastgood
                 else:
-                    lastgood = 0.1
+                    lastgood = 0.1  # in this case, we'll just call bad data "super close" and so we tend to steer away from it
 #                    lastgood = scan[y][x]  # good data
 
         # Start averaging and binning:
@@ -95,7 +95,7 @@ async def main():
             for y in range(ROIy1,ROIy2):  # sum up all the y's in each x stack
                 xstack[x] = xstack[x] + scan[y][x]
             xstack[x] = round(xstack[x]/yrange,2)  # take average across the y's
-            if 0 <= xstack[x] <= 0.5:  # something is close
+            if 0 < xstack[x] <= 0.5:  # something is close
                 print("X",end = '')
             elif 0.501 <= xstack[x] <= 1.0:
                 print("x",end = '')
