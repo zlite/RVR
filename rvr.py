@@ -14,11 +14,11 @@ from sphero_sdk import SerialAsyncDal
 from sphero_sdk import SpheroRvrAsync
 from sphero_sdk.common.enums.drive_enums import DriveFlagsBitmask
 
-# set the Realsense resolution to 640 x 480
+# set the Realsense resolution to 848x480
 yres = 480
-xres = 640
+xres = 848
 ROIx1 = 0
-ROIx2 = 640
+ROIx2 = 848
 ROIy1 = 220
 ROIy2 = 280
 yrange = ROIy2-ROIy1
